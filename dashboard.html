@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>台股評估地圖 | Muggle Zoo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    /* ── Muggle Zoo Design Tokens ─────────────────────────────────── */
+    :root {
+      --bg:         #050d1a;
+      --card-bg:    #0d1a2e;
+      --card-bg2:   #0a1628;
+      --gold:       #f5c842;
+      --gold-dim:   #c9a235;
+      --gold-glow:  rgba(245,200,66,.12);
+      --cream:      #f8f7f2;
+      --text:       #e8dcc8;
+      --text-mid:   #c8bfb0;
+      --text-dim:   #a09480;
+      --border:     #1a2a45;
+      --border-gold:rgba(245,200,66,.25);
+      --red:        #ef4444;
+      --red-bg:     rgba(239,68,68,.12);
+      --green:      #22c55e;
+      --green-bg:   rgba(34,197,94,.12);
+      --orange:     #f97316;
+      --orange-bg:  rgba(249,115,22,.12);
+      --blue:       #60a5fa;
+      --blue-bg:    rgba(96,165,250,.12);
+      --shadow:     0 4px 20px rgba(0,0,0,.4);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Noto Sans TC',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.6;
+      min-height:100vh
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header{
+      background:linear-gradient(90deg,#050d1a 0%,#0a1628 100%);
+      padding:12px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      position:sticky;
+      top:0;z-index:100;
+      border-bottom:1px solid var(--border);
+      box-shadow:0 2px 20px rgba(0,0,0,.5)
+    }
+    .header-left{display:flex;align-items:center;gap:14px}
+    .header-logo{width:36px;height:auto;display:block;opacity:.92}
+    .header-titles{display:flex;flex-direction:column;gap:1px}
+    .header-brand{
+      font-size:10px;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;
+      color:var(--gold-dim)
+    }
+    .header h1{
+      font-size:15px;font-weight:700;
+      color:var(--text);letter-spacing:.03em
+    }
+    .header .meta{
+      font-size:11px;
+      color:var(--gold);
+      font-family:'JetBrains Mono',monospace;
+      background:var(--gold-glow);
+      padding:4px 10px;border-radius:6px;
+      border:1px solid var(--border-gold)
+    }
+
+    /* ── Content ─────────────────────────────────────────────────── */
+    .content{padding:20px;max-width:1100px;margin:0 auto}
+
+    .section-title{
+      font-size:13px;font-weight:700;
+      color:var(--gold-dim);
+      border-left:3px solid var(--gold);
+      padding-left:10px;
+      margin:24px 0 12px;
+      letter-spacing:.05em;
+      text-transform:uppercase
+    }
+    .section-title:first-child{margin-top:4px}
+
+    /* ── Stat Cards ──────────────────────────────────────────────── */
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+      gap:12px;margin-bottom:20px
+    }
+    .stat-card{
+      background:var(--card-bg);
+      border-radius:12px;padding:14px 16px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      position:relative;overflow:hidden
+    }
+    .stat-card::before{
+      content:'';position:absolute;
+      top:0;left:0;right:0;height:3px;
+      background:var(--gold)
+    }
+    .stat-card.green::before{background:var(--green)}
+    .stat-card.red::before{background:var(--red)}
+    .stat-card.orange::before{background:var(--orange)}
+    .stat-label{
+      font-size:10px;color:var(--text-dim);
+      letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px
+    }
+    .stat-value{
+      font-size:26px;font-weight:700;
+      font-family:'JetBrains Mono',monospace;
+      line-height:1;color:var(--gold)
+    }
+    .stat-card.green .stat-value{color:var(--green)}
+    .stat-card.red .stat-value{color:var(--red)}
+    .stat-card.orange .stat-value{color:var(--orange)}
+    .stat-sub{font-size:11px;color:var(--text-dim);margin-top:5px}
+
+    /* ── Sliders ─────────────────────────────────────────────────── */
+    .slider-row{
+      display:grid;grid-template-columns:1fr 1fr;
+      gap:12px;margin-bottom:20px
+    }
+    .slider-card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:12px;padding:14px 16px;
+      box-shadow:var(--shadow)
+    }
+    .slider-header{
+      display:flex;justify-content:space-between;
+      align-items:center;margin-bottom:8px
+    }
+    .slider-name{font-size:12px;color:var(--text-mid);font-weight:600}
+    .slider-val{
+      font-family:'JetBrains Mono',monospace;
+      font-size:14px;font-weight:700;color:var(--gold);
+      background:var(--gold-glow);
+      padding:2px 10px;border-radius:4px;
+      border:1px solid var(--border-gold)
+    }
+    input[type=range]{width:100%;accent-color:var(--gold)}
+
+    /* ── Chart Container ─────────────────────────────────────────── */
+    .chart-card{
+      background:var(--card-bg);
+      border-radius:12px;padding:18px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      margin-bottom:24px
+    }
+    .chart-wrap{position:relative;height:460px}
+    .quadrant-legend{
+      display:grid;grid-template-columns:1fr 1fr;
+      margin-top:14px;gap:6px
+    }
+    .ql{
+      font-size:11px;padding:5px 10px;
+      border-radius:6px;font-weight:500
+    }
+    .ql.tl{background:var(--blue-bg);color:var(--blue)}
+    .ql.tr{background:var(--red-bg);color:var(--red)}
+    .ql.bl{background:var(--green-bg);color:var(--green)}
+    .ql.br{background:var(--orange-bg);color:var(--orange)}
+
+    /* ── Data Table ─────────────────────────────────────────────── */
+    .data-table{
+      width:100%;border-collapse:collapse;
+      background:var(--card-bg);
+      border-radius:12px;overflow:hidden;
+      box-shadow:var(--shadow);
+      margin-bottom:24px;font-size:13px;
+      border:1px solid var(--border)
+    }
+    .data-table th{
+      background:var(--card-bg2);
+      color:var(--gold-dim);
+      padding:10px 12px;text-align:left;
+      font-weight:600;font-size:12px;
+      letter-spacing:.06em;text-transform:uppercase;
+      border-bottom:1px solid var(--border)
+    }
+    .data-table td{
+      padding:9px 12px;
+      border-bottom:1px solid rgba(26,42,69,.6);
+      color:var(--text)
+    }
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tr:hover td{background:rgba(245,200,66,.04)}
+    .data-table td.mono{font-family:'JetBrains Mono',monospace}
+    .badge{
+      display:inline-block;padding:2px 8px;
+      border-radius:4px;font-size:11px;
+      font-weight:600;font-family:'JetBrains Mono',monospace
+    }
+    .badge.value{background:var(--green-bg);color:var(--green)}
+    .badge.growth{background:var(--orange-bg);color:var(--orange)}
+    .badge.premium{background:var(--red-bg);color:var(--red)}
+    .badge.quality{background:var(--blue-bg);color:var(--blue)}
+
+    /* ── JSON Panel ─────────────────────────────────────────────── */
+    .json-panel{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:12px;padding:16px;
+      margin-bottom:24px;box-shadow:var(--shadow)
+    }
+    .json-toggle{
+      background:var(--gold);color:#050d1a;
+      border:none;padding:9px 18px;
+      border-radius:6px;cursor:pointer;
+      font-family:inherit;font-size:13px;
+      font-weight:700;letter-spacing:.03em
+    }
+    .json-toggle:hover{background:var(--gold-dim)}
+    .json-body{margin-top:14px;display:none}
+    .json-body.open{display:block}
+    .json-hint{
+      font-size:12px;color:var(--text-dim);
+      margin-bottom:8px;line-height:1.7
+    }
+    .json-hint code{
+      background:var(--card-bg2);
+      border-radius:3px;padding:1px 5px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;color:var(--gold)
+    }
+    textarea#json-input{
+      width:100%;height:130px;
+      background:var(--card-bg2);
+      border:1px solid var(--border);
+      border-radius:6px;padding:10px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:12px;resize:vertical;color:var(--text)
+    }
+    .json-actions{
+      display:flex;align-items:center;gap:10px;margin-top:10px
+    }
+    .btn-load{
+      background:var(--gold);color:#050d1a;
+      border:none;padding:8px 20px;
+      border-radius:6px;cursor:pointer;
+      font-family:inherit;font-size:13px;font-weight:700
+    }
+    .btn-load:hover{background:var(--gold-dim)}
+    .json-err{color:var(--red);font-size:12px}
+    .json-ok{color:var(--green);font-size:12px}
+
+    /* ── No-data ─────────────────────────────────────────────────── */
+    .no-data{
+      text-align:center;padding:60px 20px;
+      color:var(--text-dim);font-size:15px
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    footer{
+      text-align:center;padding:24px 20px;
+      font-size:11px;color:var(--text-dim);
+      border-top:1px solid var(--border);
+      margin-top:10px;line-height:1.9
+    }
+    footer a{color:var(--gold-dim);text-decoration:none}
+    footer a:hover{color:var(--gold)}
+    .footer-brand{
+      font-size:13px;font-weight:600;
+      color:var(--gold-dim);margin-bottom:6px
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media(max-width:600px){
+      .slider-row{grid-template-columns:1fr}
+      .quadrant-legend{grid-template-columns:1fr}
+      .chart-wrap{height:340px}
+      .header h1{font-size:13px}
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <img class="header-logo"
+        src="https://mugglezoomi-web.github.io/muggle.zoo/logo-mugglezoo.png"
+        alt="Muggle Zoo">
+      <div class="header-titles">
+        <div class="header-brand">Muggle Zoo · 小工具</div>
+        <h1>台股評估地圖 — P/E vs P/B Valuation Map</h1>
+      </div>
+    </div>
+    <div class="meta" id="header-meta">載入中...</div>
+  </div>
+
+  <!-- Chinese Logo Banner -->
+  <div style="text-align:center;padding:20px 20px 4px;background:var(--bg);">
+    <img src="https://mugglezoomi-web.github.io/muggle.zoo/logo-chinese.png"
+      alt="麻瓜婆婆動物園"
+      style="width:clamp(120px,28vw,180px);height:auto;display:inline-block;opacity:.95;">
+  </div>
+
+  <div class="content">
+
+    <!-- JSON Loader -->
+    <div class="json-panel" style="margin-top:20px">
+      <button class="json-toggle" onclick="toggleJSON()">⬆ 更新資料 — 貼入 JSON</button>
+      <div class="json-body" id="json-body">
+        <div class="json-hint">
+          將 <code>twse_fetcher.py</code> 產生的 <code>twse_YYYYMMDD.json</code> 內容貼入，點「載入資料」即可更新圖表。<br>
+          支援格式：<code>{"financial_metrics":[{"股票代號":"2330","公司名稱":"台積電","本益比(倍)":29.44,"殖利率(%)":1.13,"股價淨值比(倍)":9.33}]}</code>
+        </div>
+        <textarea id="json-input" placeholder='{ "financial_metrics": [ ... ] }'></textarea>
+        <div class="json-actions">
+          <button class="btn-load" onclick="loadJSON()">載入資料 →</button>
+          <span id="json-msg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="section-title">市場概覽</div>
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- Sliders -->
+    <div class="slider-row">
+      <div class="slider-card">
+        <div class="slider-header">
+          <span class="slider-name">📐 本益比 P/E 分界線</span>
+          <span class="slider-val" id="pe-val">20</span>
+        </div>
+        <input type="range" id="pe-slider" min="5" max="80" value="20" oninput="onSlider()">
+      </div>
+      <div class="slider-card">
+        <div class="slider-header">
+          <span class="slider-name">📐 股價淨值比 P/B 分界線</span>
+          <span class="slider-val" id="pb-val">3.0</span>
+        </div>
+        <input type="range" id="pb-slider" min="1" max="15" step="0.5" value="3" oninput="onSlider()">
+      </div>
+    </div>
+
+    <!-- Scatter Chart -->
+    <div class="section-title">評估分佈圖 — P/E vs P/B</div>
+    <div class="chart-card">
+      <div class="chart-wrap">
+        <canvas id="scatter-chart"></canvas>
+      </div>
+      <div class="quadrant-legend">
+        <div class="ql tl">◉ 左上：高品質資產（Quality Assets）— 低P/E、高P/B</div>
+        <div class="ql tr">◎ 右上：高估優質成長（Premium & Growth）— 高P/E、高P/B</div>
+        <div class="ql bl">● 左下：價值安全帶（Value & Safety）— 低P/E、低P/B ← 低估</div>
+        <div class="ql br">◇ 右下：成長合理（Growth / Fair）— 高P/E、低P/B</div>
+      </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="section-title">個股明細（按本益比升序）</div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="detail-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>代號</th>
+            <th>名稱</th>
+            <th>本益比 (P/E)</th>
+            <th>股價淨值比 (P/B)</th>
+            <th>殖利率 (%)</th>
+            <th>象限分類</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+
+  <footer>
+    <div class="footer-brand">
+      <a href="https://mugglezoomi-web.github.io/muggle.zoo/" target="_blank">Muggle Zoo 麻瓜婆婆動物園</a>
+      &nbsp;·&nbsp;
+      <a href="https://youtube.com/@muggle-zoo" target="_blank">YouTube</a>
+      &nbsp;·&nbsp;
+      <a href="https://www.threads.com/@muggle.zoo" target="_blank">Threads</a>
+    </div>
+    資料來源：台灣證券交易所 OpenAPI (openapi.twse.com.tw) ／ 僅供研究參考，非投資建議<br>
+    本工具開放使用 ·
+    Content IP under <a href="https://mismkt.com/zh/home/" target="_blank" style="color:var(--text-dim)">Mi's Marketing</a>
+  </footer>
+
+  <script>
+    Chart.register(ChartDataLabels);
+
+    /* ── Seed Data（來自 twse_fetcher.py 2026-04-09）─────────────── */
+    let DATA = [
+  {code:"2330",name:"台積電",pe:29.44,pb:9.33,dy:1.13},
+  {code:"2317",name:"鴻海",pe:14.86,pb:1.59,dy:3.57},
+  {code:"2454",name:"聯發科",pe:16.72,pb:3.47,dy:3.83},
+  {code:"2382",name:"廣達",pe:19.76,pb:5.89,dy:3.75},
+  {code:"3711",name:"日月光投控",pe:19.83,pb:2.86,dy:4.26},
+  {code:"2303",name:"聯電",pe:11.62,pb:1.55,dy:5.69},
+  {code:"2308",name:"台達電",pe:27.96,pb:6.91,dy:1.68},
+  {code:"2881",name:"富邦金",pe:10.85,pb:1.51,dy:5.39},
+  {code:"2882",name:"國泰金",pe:12.67,pb:1.44,dy:4.01},
+  {code:"2886",name:"兆豐金",pe:13.26,pb:1.29,dy:5.34},
+  {code:"2891",name:"中信金",pe:11.84,pb:1.38,dy:4.93},
+  {code:"5880",name:"合庫金",pe:13.42,pb:1.16,dy:4.88},
+  {code:"2884",name:"玉山金",pe:16.24,pb:1.44,dy:3.66},
+  {code:"2892",name:"第一金",pe:14.74,pb:1.22,dy:4.64},
+  {code:"2885",name:"元大金",pe:14.25,pb:1.53,dy:4.76},
+  {code:"2883",name:"開發金",pe:14.12,pb:1.16,dy:4.27},
+  {code:"2890",name:"永豐金",pe:12.91,pb:1.15,dy:4.96},
+  {code:"2880",name:"華南金",pe:13.96,pb:1.12,dy:5.03},
+  {code:"2887",name:"台新金",pe:15.18,pb:1.23,dy:3.86},
+  {code:"1301",name:"台塑",pe:23.95,pb:1.54,dy:4.72},
+  {code:"1303",name:"南亞",pe:33.07,pb:1.35,dy:4.37},
+  {code:"1326",name:"台化",pe:32.55,pb:1.35,dy:4.06},
+  {code:"2002",name:"中鋼",pe:28.92,pb:0.97,dy:3.75},
+  {code:"3034",name:"聯詠",pe:16.32,pb:4.27,dy:5.98},
+  {code:"2379",name:"瑞昱",pe:18.84,pb:3.25,dy:3.72},
+  {code:"3008",name:"大立光",pe:47.13,pb:8.28,dy:1.38},
+  {code:"2912",name:"統一超",pe:25.47,pb:7.66,dy:3.52},
+  {code:"2395",name:"研華",pe:33.84,pb:5.69,dy:2.67},
+  {code:"2327",name:"國巨",pe:14.58,pb:2.95,dy:4.58},
+  {code:"4938",name:"和碩",pe:10.48,pb:1.25,dy:6.44},
+  {code:"6505",name:"台塑化",pe:62.37,pb:1.47,dy:3.24},
+  {code:"2409",name:"友達",pe:7.61,pb:0.53,dy:6.09},
+  {code:"3481",name:"群創",pe:9.93,pb:0.62,dy:4.23},
+  {code:"2207",name:"和泰車",pe:12.49,pb:3.52,dy:5.59},
+  {code:"9910",name:"豐泰",pe:21.07,pb:6.31,dy:3.56},
+  {code:"1216",name:"統一",pe:23.85,pb:3.05,dy:3.26},
+  {code:"2357",name:"華碩",pe:11.15,pb:1.71,dy:5.34},
+  {code:"2474",name:"可成",pe:17.47,pb:1.87,dy:5.24},
+  {code:"3045",name:"台灣大",pe:30.40,pb:3.96,dy:4.22},
+  {code:"4904",name:"遠傳",pe:29.20,pb:2.64,dy:4.73},
+  {code:"2105",name:"正新",pe:17.56,pb:1.46,dy:3.74},
+  {code:"1102",name:"亞泥",pe:10.99,pb:0.95,dy:5.85},
+  {code:"1101",name:"台泥",pe:14.56,pb:0.88,dy:6.09},
+  {code:"8046",name:"南電",pe:10.10,pb:2.93,dy:4.25},
+  {code:"6669",name:"緯穎",pe:26.44,pb:20.16,dy:1.07},
+  {code:"2376",name:"技嘉",pe:13.80,pb:4.33,dy:6.32},
+  {code:"2324",name:"仁寶",pe:11.42,pb:1.14,dy:6.34},
+  {code:"2353",name:"宏碁",pe:13.36,pb:1.85,dy:4.98},
+  {code:"2385",name:"群光",pe:17.36,pb:2.87,dy:5.75},
+  {code:"3037",name:"欣興",pe:7.80,pb:1.58,dy:3.79},
+  {code:"2345",name:"智邦",pe:25.85,pb:5.81,dy:2.25},
+  {code:"6415",name:"矽力-KY",pe:37.26,pb:14.53,dy:0.63},
+  {code:"5269",name:"祥碩",pe:22.52,pb:8.97,dy:2.82},
+  {code:"3533",name:"嘉澤",pe:17.28,pb:6.96,dy:4.49},
+  {code:"6239",name:"力成",pe:11.97,pb:1.62,dy:5.97},
+  {code:"2360",name:"致茂",pe:23.57,pb:2.96,dy:4.02},
+  {code:"5483",name:"中美晶",pe:10.66,pb:1.50,dy:5.04},
+  {code:"3014",name:"台揚",pe:15.73,pb:2.63,dy:5.21},
+  {code:"2347",name:"聯強",pe:12.72,pb:2.15,dy:4.42},
+  {code:"3231",name:"緯創",pe:12.05,pb:2.34,dy:4.81},
+  {code:"3考",name:"台光電",pe:14.66,pb:3.28,dy:4.35},
+  {code:"6770",name:"力積電",pe:26.68,pb:0.94,dy:0.0},
+  {code:"2618",name:"長榮航",pe:7.44,pb:1.93,dy:11.24},
+  {code:"2603",name:"長榮",pe:4.50,pb:1.22,dy:21.09},
+  {code:"2610",name:"華航",pe:11.53,pb:1.26,dy:5.01},
+  {code:"2615",name:"萬海",pe:6.68,pb:1.12,dy:12.57},
+  {code:"5876",name:"上海商銀",pe:10.74,pb:1.23,dy:5.59},
+  {code:"2801",name:"彰銀",pe:13.85,pb:0.95,dy:5.44},
+  {code:"5871",name:"中租-KY",pe:9.42,pb:2.28,dy:6.51},
+  {code:"6116",name:"彩晶",pe:14.11,pb:0.61,dy:5.14},
+  {code:"2823",name:"中壽",pe:10.06,pb:1.55,dy:4.81},
+  {code:"6271",name:"同欣電",pe:17.43,pb:3.84,dy:4.69},
+  {code:"3706",name:"神達",pe:14.86,pb:1.53,dy:5.04},
+  {code:"2834",name:"臺企銀",pe:12.67,pb:0.71,dy:6.38},
+  {code:"2838",name:"聯邦銀",pe:13.59,pb:0.82,dy:5.50},
+  {code:"6548",name:"長科",pe:18.71,pb:1.54,dy:0.0},
+  {code:"3702",name:"大聯大",pe:13.49,pb:1.52,dy:5.92},
+  {code:"8�",name:"矽統",pe:10.15,pb:1.35,dy:8.27},
+  {code:"2448",name:"晶電",pe:245.06,pb:5.07,dy:0.0},
+  {code:"3030",name:"德律",pe:17.95,pb:2.65,dy:5.11},
+  {code:"6533",name:"晶心科",pe:69.38,pb:14.98,dy:0.49}
+    ];
+    let dataDate = "2026-04-09";
+    let peThresh = 20, pbThresh = 3;
+    let scatterChart = null;
+
+    /* ── Quadrant Classifier ─────────────────────────────────────── */
+    function getQuadrant(pe, pb) {
+      const hiPE = pe > peThresh, hiPB = pb > pbThresh;
+      if (!hiPE && hiPB)  return { badge:"quality", label:"高品質", color:"#60a5fa" };
+      if (hiPE  && hiPB)  return { badge:"premium", label:"高估成長", color:"#ef4444" };
+      if (!hiPE && !hiPB) return { badge:"value",   label:"低估價值", color:"#22c55e" };
+      return                     { badge:"growth",  label:"成長合理", color:"#f97316" };
+    }
+
+    /* ── Render Stats ────────────────────────────────────────────── */
+    function renderStats() {
+      const total = DATA.length;
+      const values = DATA.filter(d => !( d.pe > peThresh) && !(d.pb > pbThresh));
+      const avgPE = (DATA.reduce((s,d) => s+d.pe, 0)/total).toFixed(1);
+      const avgDY = (DATA.reduce((s,d) => s+d.dy, 0)/total).toFixed(2);
+      document.getElementById('stats-grid').innerHTML = [
+        { cls:"",       label:"樣本總數 TOTAL",    val:total,       sub:"追蹤中的股票"},
+        { cls:"green",  label:"低估企業 VALUE",     val:values.length, sub:"P/E & P/B 雙低"},
+        { cls:"",       label:"平均本益比 AVG P/E", val:avgPE+"x",   sub:"全樣本平均"},
+        { cls:"orange", label:"平均殖利率 AVG DY",  val:avgDY+"%",   sub:"全樣本平均"},
+      ].map(s=>`
+        <div class="stat-card ${s.cls}">
+          <div class="stat-label">${s.label}</div>
+          <div class="stat-value">${s.val}</div>
+          <div class="stat-sub">${s.sub}</div>
+        </div>`).join('');
+      document.getElementById('header-meta').textContent = `資料日期：${dataDate}`;
+    }
+
+    /* ── Render Chart ────────────────────────────────────────────── */
+    function renderChart() {
+      const byQ = { value:[], quality:[], growth:[], premium:[] };
+      DATA.forEach(d => {
+        const q = getQuadrant(d.pe, d.pb);
+        byQ[q.badge].push({ x:d.pe, y:d.pb, label:d.name, code:d.code, dy:d.dy });
+      });
+
+      const datasets = [
+        { key:"value",   label:"低估價值 (Value)",   color:"#22c55e" },
+        { key:"quality", label:"高品質資產 (Quality)",color:"#60a5fa" },
+        { key:"growth",  label:"成長合理 (Growth)",   color:"#f97316" },
+        { key:"premium", label:"高估成長 (Premium)",  color:"#ef4444" },
+      ].map(q => ({
+        label: q.label,
+        data:  byQ[q.key],
+        backgroundColor: q.color + "cc",   /* 帶透明度 */
+        borderColor:     q.color,
+        borderWidth:     1.5,
+        pointRadius:     5,               /* 小點 */
+        pointHoverRadius:10,
+        pointStyle:      'circle',
+        hoverBackgroundColor: q.color,
+      }));
+
+      const maxPE = Math.ceil(Math.max(...DATA.map(d=>d.pe)) * 1.15 / 10) * 10;
+      const maxPB = Math.ceil(Math.max(...DATA.map(d=>d.pb)) * 1.15 / 2) * 2;
+
+      const ctx = document.getElementById('scatter-chart').getContext('2d');
+      if (scatterChart) scatterChart.destroy();
+
+      scatterChart = new Chart(ctx, {
+        type:'scatter',
+        data:{ datasets },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          layout:{ padding:{ top:16, right:20 } },
+          animation:{ duration:400 },
+          plugins:{
+            legend:{
+              position:'top',
+              labels:{
+                font:{ size:12, family:"'Noto Sans TC'" },
+                padding:16,
+                usePointStyle:true,
+                color:'#a09480'
+              }
+            },
+            tooltip:{
+              backgroundColor:'#0d1a2e',
+              borderColor:'#1a2a45',
+              borderWidth:1,
+              titleColor:'#f5c842',
+              bodyColor:'#e8dcc8',
+              padding:14,
+              cornerRadius:10,
+              callbacks:{
+                title: ctx => {
+                  const d = ctx[0].raw;
+                  return `${d.code}  ${d.label}`;
+                },
+                label: ctx => {
+                  const d = ctx.raw;
+                  return [
+                    `P/E：${d.x.toFixed(2)}x`,
+                    `P/B：${d.y.toFixed(2)}x`,
+                    `殖利率：${d.dy.toFixed(2)}%`,
+                  ];
+                }
+              },
+              titleFont:{ size:13, family:"'Noto Sans TC'", weight:'700' },
+              bodyFont:{ size:12, family:"'Noto Sans TC'" },
+            },
+            /* 關閉常駐 label，只在 hover 時用 tooltip 顯示 */
+            datalabels:{ display:false },
+          },
+          scales:{
+            x:{
+              title:{ display:true, text:'本益比 (P/E Ratio)', font:{ size:12 }, color:'#a09480', padding:{ top:8 } },
+              min:0, max:maxPE,
+              grid:{ color:'rgba(255,255,255,.05)' },
+              ticks:{ font:{ size:11, family:"'JetBrains Mono'" }, color:'#a09480' },
+            },
+            y:{
+              title:{ display:true, text:'股價淨值比 (P/B Ratio)', font:{ size:12 }, color:'#a09480' },
+              min:0, max:maxPB,
+              grid:{ color:'rgba(255,255,255,.05)' },
+              ticks:{ font:{ size:11, family:"'JetBrains Mono'" }, color:'#a09480' },
+            }
+          },
+        },
+        plugins:[
+          /* 深色 canvas 背景 */
+          {
+            id:'darkBg',
+            beforeDraw(chart){
+              const { ctx, chartArea } = chart;
+              ctx.save();
+              ctx.fillStyle = '#0d1a2e';
+              ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+              ctx.restore();
+            }
+          },
+          /* 象限分界線 */
+          {
+            id:'quadrantLines',
+            afterDraw(chart){
+              const { ctx, scales:{ x, y } } = chart;
+              const xPx = x.getPixelForValue(peThresh);
+              const yPx = y.getPixelForValue(pbThresh);
+              ctx.save();
+              ctx.setLineDash([6,4]);
+              ctx.strokeStyle = '#f5c842';
+              ctx.lineWidth = 1.2;
+              ctx.globalAlpha = 0.35;
+              ctx.beginPath(); ctx.moveTo(xPx, y.top); ctx.lineTo(xPx, y.bottom); ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(x.left, yPx); ctx.lineTo(x.right, yPx); ctx.stroke();
+              ctx.restore();
+            }
+          }
+        ]
+      });
+    }
+
+    /* ── Render Table ────────────────────────────────────────────── */
+    function renderTable(){
+      const sorted = [...DATA].sort((a,b)=>a.pe-b.pe);
+      document.getElementById('detail-tbody').innerHTML = sorted.map(d=>{
+        const q = getQuadrant(d.pe, d.pb);
+        const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${q.color}"></span>`;
+        return `<tr>
+          <td>${dot}</td>
+          <td class="mono" style="color:var(--gold);font-weight:600">${d.code}</td>
+          <td style="font-weight:500;color:var(--text)">${d.name}</td>
+          <td class="mono" style="font-weight:700;color:var(--text)">${d.pe.toFixed(2)}</td>
+          <td class="mono" style="color:var(--text-mid)">${d.pb.toFixed(2)}</td>
+          <td class="mono" style="color:var(--green)">${d.dy.toFixed(2)}</td>
+          <td><span class="badge ${q.badge}">${q.label}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ── Refresh All ─────────────────────────────────────────────── */
+    function refresh(){
+      document.getElementById('pe-val').textContent = peThresh;
+      document.getElementById('pb-val').textContent = parseFloat(pbThresh).toFixed(1);
+      renderStats(); renderChart(); renderTable();
+    }
+
+    /* ── Slider ──────────────────────────────────────────────────── */
+    function onSlider(){
+      peThresh = +document.getElementById('pe-slider').value;
+      pbThresh = +document.getElementById('pb-slider').value;
+      refresh();
+    }
+
+    /* ── JSON toggle / load ──────────────────────────────────────── */
+    function toggleJSON(){
+      document.getElementById('json-body').classList.toggle('open');
+    }
+    function loadJSON(){
+      const raw = document.getElementById('json-input').value.trim();
+      const msg = document.getElementById('json-msg');
+      try{
+        const obj = JSON.parse(raw);
+        const rows = obj.financial_metrics || obj;
+        if(!Array.isArray(rows)) throw new Error("找不到 financial_metrics 陣列");
+        const parsed = rows.map(r=>({
+          code: r["股票代號"]||r.code||"",
+          name: r["公司名稱"]||r.name||"",
+          pe:   parseFloat(r["本益比(倍)"]||r.pe||0),
+          pb:   parseFloat(r["股價淨值比(倍)"]||r.pb||0),
+          dy:   parseFloat(r["殖利率(%)"]||r.dy||0),
+        })).filter(r=>r.code&&r.pe>0&&r.pb>0);
+        if(parsed.length===0) throw new Error("解析後無有效資料");
+        DATA = parsed;
+        dataDate = obj.meta?.generated_at?.slice(0,10)||new Date().toISOString().slice(0,10);
+        msg.className='json-ok';
+        msg.textContent=`✅ 成功載入 ${DATA.length} 支股票`;
+        document.getElementById('json-body').classList.remove('open');
+        refresh();
+      }catch(e){
+        msg.className='json-err';
+        msg.textContent=`❌ ${e.message}`;
+      }
+    }
+
+    /* ── Init ────────────────────────────────────────────────────── */
+    refresh();
+  </script>
+</body>
+</html>
