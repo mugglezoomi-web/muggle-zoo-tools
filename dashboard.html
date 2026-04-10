@@ -337,14 +337,14 @@
           <span class="slider-name">📐 本益比 P/E 分界線</span>
           <span class="slider-val" id="pe-val">20</span>
         </div>
-        <input type="range" id="pe-slider" min="5" max="80" value="20" oninput="onSlider()">
+        <input type="range" id="pe-slider" min="5" max="200" value="50" oninput="onSlider()">
       </div>
       <div class="slider-card">
         <div class="slider-header">
           <span class="slider-name">📐 股價淨值比 P/B 分界線</span>
           <span class="slider-val" id="pb-val">3.0</span>
         </div>
-        <input type="range" id="pb-slider" min="1" max="15" step="0.5" value="3" oninput="onSlider()">
+        <input type="range" id="pb-slider" min="1" max="25" step="0.5" value="5" oninput="onSlider()">
       </div>
     </div>
 
@@ -490,7 +490,7 @@
   {code:"2323",name:"中環",pe:6.87,pb:0.61,dy:1.84}
 ];
     let dataDate = "2026-04-10";
-    let peThresh = 20, pbThresh = 3;
+    let peThresh = 50, pbThresh = 5;
     let scatterChart = null;
 
     /* ── Quadrant Classifier ─────────────────────────────────────── */
