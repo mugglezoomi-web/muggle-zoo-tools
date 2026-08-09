@@ -206,6 +206,7 @@
     .badge.growth{background:var(--orange-bg);color:var(--orange)}
     .badge.premium{background:var(--red-bg);color:var(--red)}
     .badge.quality{background:var(--blue-bg);color:var(--blue)}
+    .badge.missing{background:rgba(160,148,128,.12);color:var(--text-dim)}
 
     /* ── JSON Panel ─────────────────────────────────────────────── */
     .json-panel{
@@ -399,37 +400,110 @@
   <script>
     Chart.register(ChartDataLabels);
 
-    /* ── Seed Data（來自 twse_fetcher.py 2026-04-09）─────────────── */
+    /* ── Seed Data（前 100 大；資料日期 2026-08-07）──────────────── */
     let DATA = [
-  {code:"2330",name:"台積電",pe:32.91,pb:10.43,dy:1.01},
-  {code:"2317",name:"鴻海",pe:16.59,pb:1.77,dy:3.2},
-  {code:"2382",name:"廣達",pe:16.56,pb:5.1,dy:4.84},
-  {code:"3231",name:"緯創",pe:16.3,pb:2.52,dy:3.91},
-  {code:"2308",name:"台達電",pe:93.56,pb:20.98,dy:0.54},
-  {code:"3017",name:"奇鋐",pe:57.95,pb:24.93,dy:0.74},
-  {code:"2356",name:"英業達",pe:19.13,pb:2.18,dy:4.32},
-  {code:"2357",name:"華碩",pe:9.8,pb:1.63,dy:7.14},
-  {code:"3711",name:"日月光投控",pe:52.58,pb:6.16,dy:1.35},
-  {code:"2303",name:"聯電",pe:22.51,pb:2.47,dy:3.49},
-  {code:"4938",name:"和碩",pe:15.27,pb:1.06,dy:4.88},
-  {code:"2313",name:"華通",pe:41.74,pb:5.73,dy:1.22},
-  {code:"2354",name:"鴻準",pe:21.98,pb:0.67,dy:2.94},
-  {code:"1503",name:"士電",pe:30.38,pb:2.73,dy:2.62},
-  {code:"1514",name:"亞力",pe:33.64,pb:4.75,dy:1.98},
-  {code:"2404",name:"漢唐",pe:19.94,pb:9.71,dy:4.17},
-  {code:"2049",name:"上銀",pe:71.58,pb:2.92,dy:0.65},
-  {code:"2359",name:"所羅門",pe:93.09,pb:3.4,dy:0.87},
-  {code:"4585",name:"達明",pe:239.62,pb:4.74,dy:0.32},
-  {code:"2395",name:"研華",pe:29.93,pb:5.77,dy:3.06},
-  {code:"2352",name:"佳世達",pe:33.82,pb:1.35,dy:4.11},
-  {code:"2634",name:"漢翔",pe:60.9,pb:2.51,dy:1.64},
-  {code:"6753",name:"龍德造船",pe:23.67,pb:3.45,dy:0.91},
-  {code:"2630",name:"亞航",pe:47.2,pb:2.79,dy:1.91},
-  {code:"1216",name:"統一",pe:20.29,pb:2.93,dy:4.29},
-  {code:"6472",name:"保瑞",pe:17.79,pb:3.45,dy:2.4},
-  {code:"1795",name:"美時",pe:12.28,pb:2.44,dy:1.22}
+  {code:"2330",name:"台積電",pe:31.86,pb:10.43,dy:0.93},
+  {code:"2454",name:"聯發科",pe:64.41,pb:14.67,dy:1.37},
+  {code:"2308",name:"台達電",pe:52.51,pb:14.59,dy:0.7},
+  {code:"2317",name:"鴻海",pe:18.47,pb:2.05,dy:2.76},
+  {code:"3711",name:"日月光投控",pe:54.32,pb:7.32,dy:1.12},
+  {code:"2881",name:"富邦金",pe:17.47,pb:1.94,dy:3.35},
+  {code:"2383",name:"台光電",pe:81.94,pb:32.19,dy:0.48},
+  {code:"2303",name:"聯電",pe:17.44,pb:3.28,dy:2.25},
+  {code:"2882",name:"國泰金",pe:15.08,pb:1.99,dy:3.52},
+  {code:"3037",name:"欣興",pe:63.58,pb:12.26,dy:0.21},
+  {code:"2891",name:"中信金",pe:15.81,pb:2.35,dy:3.81},
+  {code:"1303",name:"南亞",pe:81.39,pb:3.88,dy:0.43},
+  {code:"2345",name:"智邦",pe:34.8,pb:17.93,dy:0.68},
+  {code:"2382",name:"廣達",pe:14.98,pb:5.54,dy:5.23},
+  {code:"2408",name:"南亞科",pe:17.73,pb:4.89,dy:0.3},
+  {code:"7769",name:"鴻勁",pe:78.86,pb:18.13,dy:1.03},
+  {code:"2412",name:"中華電",pe:27.34,pb:2.69,dy:3.78},
+  {code:"2327",name:"國巨*",pe:42.52,pb:6.65,dy:1.11},
+  {code:"6669",name:"緯穎",pe:20.45,pb:8.09,dy:2.69},
+  {code:"3017",name:"奇鋐",pe:45.76,pb:24.2,dy:0.75},
+  {code:"2885",name:"元大金",pe:20.83,pb:2.51,dy:3.25},
+  {code:"2887",name:"台新新光金",pe:17.23,pb:1.54,dy:3.13},
+  {code:"2360",name:"致茂",pe:51.79,pb:26.07,dy:0.96},
+  {code:"2886",name:"兆豐金",pe:20.69,pb:1.88,dy:3.44},
+  {code:"2059",name:"川湖",pe:61.25,pb:31.37,dy:0.46},
+  {code:"6505",name:"台塑化",pe:12.33,pb:1.39,dy:1.69},
+  {code:"2884",name:"玉山金",pe:17.34,pb:2.17,dy:3.67},
+  {code:"2880",name:"華南金",pe:21.45,pb:2.54,dy:3.27},
+  {code:"2357",name:"華碩",pe:14.6,pb:2.12,dy:5.14},
+  {code:"2890",name:"永豐金",pe:18.64,pb:2.13,dy:3.34},
+  {code:"8046",name:"南電",pe:126.91,pb:14.17,dy:0.19},
+  {code:"2344",name:"華邦電",pe:18.03,pb:4.46,dy:0.31},
+  {code:"3231",name:"緯創",pe:18.41,pb:3.07,dy:3},
+  {code:"2892",name:"第一金",pe:18.23,pb:1.72,dy:3.66},
+  {code:"3008",name:"大立光",pe:23.32,pb:2.99,dy:1.82},
+  {code:"2883",name:"凱基金",pe:17.33,pb:1.54,dy:3.24},
+  {code:"3443",name:"創意",pe:116.51,pb:45.23,dy:0.44},
+  {code:"3653",name:"健策",pe:121.16,pb:30.34,dy:0.5},
+  {code:"2395",name:"研華",pe:40.15,pb:9.96,dy:1.76},
+  {code:"2301",name:"光寶科",pe:28.89,pb:5.85,dy:2.02},
+  {code:"6446",name:"藥華藥",pe:77.74,pb:13.39,dy:0.21},
+  {code:"4958",name:"臻鼎-KY",pe:66.71,pb:4.03,dy:0.72},
+  {code:"2603",name:"長榮",pe:9.07,pb:0.77,dy:7.71},
+  {code:"5880",name:"合庫金",pe:18.71,pb:1.45,dy:4.01},
+  {code:"1216",name:"統一",pe:18.29,pb:3.16,dy:3.96},
+  {code:"3045",name:"台灣大",pe:22.62,pb:3.71,dy:4.25},
+  {code:"2368",name:"金像電",pe:44.33,pb:14.4,dy:1},
+  {code:"3665",name:"貿聯-KY",pe:44.4,pb:9.2,dy:0.69},
+  {code:"4904",name:"遠傳",pe:26.14,pb:3.88,dy:3.7},
+  {code:"3481",name:"群創",pe:432.27,pb:1.67,dy:2.1},
+  {code:"2379",name:"瑞昱",pe:27,pb:8.55,dy:3.33},
+  {code:"1301",name:"台塑",pe:null,pb:0.91,dy:0.9},
+  {code:"1326",name:"台化",pe:24.96,pb:0.66,dy:1.02},
+  {code:"3189",name:"景碩",pe:152.69,pb:9.75,dy:0.18},
+  {code:"3034",name:"聯詠",pe:18.91,pb:4.78,dy:4.24},
+  {code:"2207",name:"和泰車",pe:15.11,pb:3.63,dy:3.88},
+  {code:"2002",name:"中鋼",pe:null,pb:0.97,dy:0.79},
+  {code:"2801",name:"彰銀",pe:14.47,pb:1.21,dy:4.54},
+  {code:"2449",name:"京元電子",pe:32.84,pb:5.44,dy:0.62},
+  {code:"1590",name:"亞德客-KY",pe:33.82,pb:6.08,dy:1.88},
+  {code:"3661",name:"世芯-KY",pe:54.45,pb:7.02,dy:0.92},
+  {code:"6770",name:"力積電",pe:37.01,pb:2.88,dy:null},
+  {code:"3036",name:"文曄",pe:15,pb:2.37,dy:3.69},
+  {code:"2615",name:"萬海",pe:7.84,pb:0.83,dy:3.53},
+  {code:"2618",name:"長榮航",pe:8.43,pb:1.77,dy:4.5},
+  {code:"2912",name:"統一超",pe:19.91,pb:5.61,dy:4.07},
+  {code:"4938",name:"和碩",pe:20.02,pb:1.15,dy:4.6},
+  {code:"2376",name:"技嘉",pe:16.07,pb:3.57,dy:3.49},
+  {code:"5876",name:"上海商銀",pe:13.79,pb:1.01,dy:4.14},
+  {code:"1519",name:"華城",pe:44.88,pb:25.04,dy:1.84},
+  {code:"2356",name:"英業達",pe:24.33,pb:3.13,dy:3.13},
+  {code:"2404",name:"漢唐",pe:21.38,pb:15.1,dy:3.48},
+  {code:"6515",name:"穎崴",pe:138.52,pb:37.5,dy:0.73},
+  {code:"3533",name:"嘉澤",pe:26.84,pb:5.11,dy:1.83},
+  {code:"2313",name:"華通",pe:36.77,pb:5.3,dy:1.34},
+  {code:"2337",name:"旺宏",pe:28.79,pb:3.88,dy:null},
+  {code:"5871",name:"中租-KY",pe:10.21,pb:1.07,dy:5.5},
+  {code:"3044",name:"健鼎",pe:19.14,pb:3.55,dy:3.22},
+  {code:"3702",name:"大聯大",pe:14.96,pb:2.29,dy:3.1},
+  {code:"1101",name:"台泥",pe:null,pb:0.78,dy:3.29},
+  {code:"2409",name:"友達",pe:76.72,pb:1.24,dy:1.63},
+  {code:"6239",name:"力成",pe:25.99,pb:3.39,dy:1.71},
+  {code:"2609",name:"陽明",pe:16.4,pb:0.54,dy:3.96},
+  {code:"2834",name:"臺企銀",pe:12.6,pb:1.08,dy:6.06},
+  {code:"6139",name:"亞翔",pe:22.26,pb:8.63,dy:2.87},
+  {code:"6415",name:"矽力*-KY",pe:59.34,pb:4.5,dy:0.58},
+  {code:"6919",name:"康霈*",pe:null,pb:17.44,dy:null},
+  {code:"2324",name:"仁寶",pe:27.48,pb:1.22,dy:3.01},
+  {code:"2347",name:"聯強",pe:12.78,pb:1.8,dy:4.5},
+  {code:"1504",name:"東元",pe:29.33,pb:1.84,dy:3.03},
+  {code:"7750",name:"新代",pe:40.05,pb:12.43,dy:0.69},
+  {code:"1402",name:"遠東新",pe:17.08,pb:0.63,dy:4.55},
+  {code:"1605",name:"華新",pe:10.57,pb:0.76,dy:1.45},
+  {code:"2610",name:"華航",pe:8.79,pb:1.34,dy:3.6},
+  {code:"6789",name:"采鈺",pe:79.58,pb:7.19,dy:0.72},
+  {code:"1802",name:"台玻",pe:408.46,pb:3.11,dy:null},
+  {code:"8210",name:"勤誠",pe:29.23,pb:11.2,dy:1.26},
+  {code:"2451",name:"創見",pe:5.17,pb:3.33,dy:3.97},
+  {code:"2812",name:"台中銀",pe:12.03,pb:1.2,dy:5.68},
+  {code:"2377",name:"微星",pe:15.99,pb:2.35,dy:2.75},
 ];
-    let dataDate = "2026-04-30";
+    let dataDate = "2026-08-07";
     let peThresh = 50, pbThresh = 5;
     let scatterChart = null;
 
@@ -445,9 +519,11 @@
     /* ── Render Stats ────────────────────────────────────────────── */
     function renderStats() {
       const total = DATA.length;
-      const values = DATA.filter(d => !( d.pe > peThresh) && !(d.pb > pbThresh));
-      const avgPE = (DATA.reduce((s,d) => s+d.pe, 0)/total).toFixed(1);
-      const avgDY = (DATA.reduce((s,d) => s+d.dy, 0)/total).toFixed(2);
+      const validPE = DATA.filter(d => Number.isFinite(d.pe));
+      const validDY = DATA.filter(d => Number.isFinite(d.dy));
+      const values = validPE.filter(d => Number.isFinite(d.pb) && d.pe <= peThresh && d.pb <= pbThresh);
+      const avgPE = (validPE.reduce((s,d) => s+d.pe, 0)/validPE.length).toFixed(1);
+      const avgDY = (validDY.reduce((s,d) => s+d.dy, 0)/validDY.length).toFixed(2);
       document.getElementById('stats-grid').innerHTML = [
         { cls:"",       label:"樣本總數 TOTAL",    val:total,       sub:"追蹤中的股票"},
         { cls:"green",  label:"低估企業 VALUE",     val:values.length, sub:"P/E & P/B 雙低"},
@@ -465,7 +541,8 @@
     /* ── Render Chart ────────────────────────────────────────────── */
     function renderChart() {
       const byQ = { value:[], quality:[], growth:[], premium:[] };
-      DATA.forEach(d => {
+      const chartRows = DATA.filter(d => Number.isFinite(d.pe) && Number.isFinite(d.pb));
+      chartRows.forEach(d => {
         const q = getQuadrant(d.pe, d.pb);
         byQ[q.badge].push({ x:d.pe, y:d.pb, label:d.name, code:d.code, dy:d.dy });
       });
@@ -487,8 +564,8 @@
         hoverBackgroundColor: q.color,
       }));
 
-      const maxPE = Math.ceil(Math.max(...DATA.map(d=>d.pe)) * 1.15 / 10) * 10;
-      const maxPB = Math.ceil(Math.max(...DATA.map(d=>d.pb)) * 1.15 / 2) * 2;
+      const maxPE = Math.ceil(Math.max(...chartRows.map(d=>d.pe)) * 1.15 / 10) * 10;
+      const maxPB = Math.ceil(Math.max(...chartRows.map(d=>d.pb)) * 1.15 / 2) * 2;
 
       const ctx = document.getElementById('scatter-chart').getContext('2d');
       if (scatterChart) scatterChart.destroy();
@@ -529,7 +606,7 @@
                   return [
                     `P/E：${d.x.toFixed(2)}x`,
                     `P/B：${d.y.toFixed(2)}x`,
-                    `殖利率：${d.dy.toFixed(2)}%`,
+                    `殖利率：${Number.isFinite(d.dy) ? d.dy.toFixed(2)+'%' : '—'}`,
                   ];
                 }
               },
@@ -589,17 +666,25 @@
 
     /* ── Render Table ────────────────────────────────────────────── */
     function renderTable(){
-      const sorted = [...DATA].sort((a,b)=>a.pe-b.pe);
+      const sorted = [...DATA].sort((a,b)=>{
+        if (!Number.isFinite(a.pe)) return 1;
+        if (!Number.isFinite(b.pe)) return -1;
+        return a.pe-b.pe;
+      });
       document.getElementById('detail-tbody').innerHTML = sorted.map(d=>{
-        const q = getQuadrant(d.pe, d.pb);
+        const hasValuation = Number.isFinite(d.pe) && Number.isFinite(d.pb);
+        const q = hasValuation
+          ? getQuadrant(d.pe, d.pb)
+          : { badge:"missing", label:"資料不足", color:"#a09480" };
         const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${q.color}"></span>`;
+        const fmt = value => Number.isFinite(value) ? value.toFixed(2) : '—';
         return `<tr>
           <td>${dot}</td>
           <td class="mono" style="color:var(--gold);font-weight:600">${d.code}</td>
           <td style="font-weight:500;color:var(--text)">${d.name}</td>
-          <td class="mono" style="font-weight:700;color:var(--text)">${d.pe.toFixed(2)}</td>
-          <td class="mono" style="color:var(--text-mid)">${d.pb.toFixed(2)}</td>
-          <td class="mono" style="color:var(--green)">${d.dy.toFixed(2)}</td>
+          <td class="mono" style="font-weight:700;color:var(--text)">${fmt(d.pe)}</td>
+          <td class="mono" style="color:var(--text-mid)">${fmt(d.pb)}</td>
+          <td class="mono" style="color:var(--green)">${fmt(d.dy)}</td>
           <td><span class="badge ${q.badge}">${q.label}</span></td>
         </tr>`;
       }).join('');
@@ -630,16 +715,22 @@
         const obj = JSON.parse(raw);
         const rows = obj.financial_metrics || obj;
         if(!Array.isArray(rows)) throw new Error("找不到 financial_metrics 陣列");
+        const metric = value => {
+          const n = parseFloat(value);
+          return Number.isFinite(n) && n > 0 ? n : null;
+        };
         const parsed = rows.map(r=>({
           code: r["股票代號"]||r.code||"",
           name: r["公司名稱"]||r.name||"",
-          pe:   parseFloat(r["本益比(倍)"]||r.pe||0),
-          pb:   parseFloat(r["股價淨值比(倍)"]||r.pb||0),
-          dy:   parseFloat(r["殖利率(%)"]||r.dy||0),
-        })).filter(r=>r.code&&r.pe>0&&r.pb>0);
+          pe:   metric(r["本益比(倍)"]??r.pe),
+          pb:   metric(r["股價淨值比(倍)"]??r.pb),
+          dy:   metric(r["殖利率(%)"]??r.dy),
+        })).filter(r=>r.code);
         if(parsed.length===0) throw new Error("解析後無有效資料");
         DATA = parsed;
-        dataDate = obj.meta?.generated_at?.slice(0,10)||new Date().toISOString().slice(0,10);
+        dataDate = rows.find(r=>r["資料日期"])?.["資料日期"]
+          || obj.meta?.generated_at?.slice(0,10)
+          || new Date().toISOString().slice(0,10);
         msg.className='json-ok';
         msg.textContent=`✅ 成功載入 ${DATA.length} 支股票`;
         document.getElementById('json-body').classList.remove('open');
