@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>台股前100大期間比較 | Muggle Zoo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#050d1a; --card-bg:#0d1a2e; --card-bg2:#0a1628;
+  --gold:#f5c842; --gold-dim:#c9a235; --gold-glow:rgba(245,200,66,.12);
+  --text:#e8dcc8; --text-mid:#c8bfb0; --text-dim:#a09480;
+  --border:#1a2a45; --border-gold:rgba(245,200,66,.25);
+  --red:#ef4444; --red-bg:rgba(239,68,68,.12);
+  --green:#22c55e; --green-bg:rgba(34,197,94,.12);
+  --orange:#f97316; --orange-bg:rgba(249,115,22,.12);
+  --blue:#60a5fa; --blue-bg:rgba(96,165,250,.12);
+  --shadow:0 4px 20px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+.header{background:linear-gradient(90deg,#050d1a 0%,#0a1628 100%);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.5)}
+.header-titles{display:flex;flex-direction:column;gap:1px}
+.header-brand{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim)}
+.header h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.03em}
+.header .meta{font-size:11px;color:var(--gold);font-family:'JetBrains Mono',monospace;background:var(--gold-glow);padding:4px 10px;border-radius:6px;border:1px solid var(--border-gold)}
+
+.content{padding:20px;max-width:1180px;margin:0 auto}
+.section-title{font-size:13px;font-weight:700;color:var(--gold-dim);border-left:3px solid var(--gold);padding-left:10px;margin:26px 0 12px;letter-spacing:.05em;text-transform:uppercase}
+.section-title:first-child{margin-top:4px}
+.note{font-size:11px;color:var(--text-dim);margin:-6px 0 14px;padding-left:13px}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab{background:var(--card-bg);border:1px solid var(--border);color:var(--text-mid);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.tab:hover{border-color:var(--border-gold);color:var(--text)}
+.tab[aria-selected="true"]{background:var(--gold-glow);border-color:var(--gold);color:var(--gold)}
+.tab:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* Period pickers */
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.ctrl{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.ctrl label{display:block;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+select{width:100%;background:var(--card-bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:13px}
+select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+
+/* Stat cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px}
+.stat-card{background:var(--card-bg);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-label{font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1.1;color:var(--gold)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.red .stat-value{color:var(--red)}
+.stat-card.blue .stat-value{color:var(--blue)}
+.stat-sub{font-size:11px;color:var(--text-dim);margin-top:5px}
+
+/* Charts */
+.chart-card{background:var(--card-bg);border-radius:12px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:22px}
+.chart-wrap{position:relative;height:440px}
+.quadrant-legend{display:grid;grid-template-columns:1fr 1fr;margin-top:14px;gap:6px}
+.ql{font-size:11px;padding:5px 10px;border-radius:6px;font-weight:500}
+.ql.tl{background:var(--blue-bg);color:var(--blue)}
+.ql.tr{background:var(--red-bg);color:var(--red)}
+.ql.bl{background:var(--green-bg);color:var(--green)}
+.ql.br{background:var(--orange-bg);color:var(--orange)}
+
+/* Table */
+.table-scroll{overflow-x:auto;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:24px}
+.data-table{width:100%;border-collapse:collapse;background:var(--card-bg);font-size:13px;min-width:720px}
+.data-table th{background:var(--card-bg2);color:var(--gold-dim);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+.data-table td{padding:9px 12px;border-bottom:1px solid rgba(26,42,69,.6);color:var(--text);white-space:nowrap}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(245,200,66,.04)}
+.data-table td.mono,.data-table td.num{font-family:'JetBrains Mono',monospace}
+.data-table td.num{text-align:right}
+.up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--text-dim)}
+.star{color:var(--gold);margin-left:4px}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.badge.new{background:var(--blue-bg);color:var(--blue)}
+.badge.out{background:var(--red-bg);color:var(--red)}
+.badge.base{background:var(--gold-glow);color:var(--gold-dim)}
+
+/* Loader / fallback */
+.panel{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);margin-bottom:22px}
+.panel h2{font-size:14px;color:var(--gold);margin-bottom:8px}
+.panel p{font-size:13px;color:var(--text-mid);margin-bottom:10px}
+textarea{width:100%;min-height:130px;background:var(--card-bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical}
+button.action{background:var(--gold-glow);border:1px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px}
+button.action:hover{background:rgba(245,200,66,.2)}
+.msg{font-size:12px;margin-top:8px;font-family:'JetBrains Mono',monospace}
+.msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+.hidden{display:none !important}
+.empty{padding:40px 20px;text-align:center;color:var(--text-dim);font-size:13px}
+.notice{background:var(--blue-bg);border:1px solid rgba(96,165,250,.35);border-left:3px solid var(--blue);border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--text-mid);margin-bottom:18px}
+.notice b{color:var(--blue);font-weight:600}
+.badge.derived{background:rgba(200,191,176,.13);color:var(--text-dim)}
+.badge.partial{background:var(--orange-bg);color:var(--orange)}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-titles">
+    <span class="header-brand">Muggle Zoo</span>
+    <h1>台股前 100 大 · 期間比較</h1>
+  </div>
+  <span class="meta" id="build-meta">載入中…</span>
+</header>
+
+<main class="content">
+
+  <!-- 載入失敗時的備援 -->
+  <section id="fallback" class="panel hidden">
+    <h2>找不到 history.json</h2>
+    <p>Dashboard 預設讀取同一層的 <code>history.json</code>。若你是用檔案總管直接開啟這個檔（file://），瀏覽器會擋下讀取；請改用 GitHub Pages，或在資料夾內執行 <code>python -m http.server</code> 後開 localhost。也可以直接把 history.json 的內容貼在下面。</p>
+    <textarea id="paste" placeholder="貼上 history.json 的完整內容"></textarea>
+    <button class="action" id="btn-paste">載入貼上的資料</button>
+    <div class="msg" id="paste-msg"></div>
+  </section>
+
+  <div id="app" class="hidden">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="universe"  aria-selected="true">市值榜</button>
+      <button class="tab" role="tab" data-view="monthly"   aria-selected="false">月營收</button>
+      <button class="tab" role="tab" data-view="quarterly" aria-selected="false">季報</button>
+      <button class="tab" role="tab" data-view="valuation" aria-selected="false">估值地圖</button>
+    </div>
+
+    <div class="controls">
+      <div class="ctrl">
+        <label for="sel-cur">本期</label>
+        <select id="sel-cur"></select>
+      </div>
+      <div class="ctrl">
+        <label for="sel-prev">對照期</label>
+        <select id="sel-prev"></select>
+      </div>
+      <div class="ctrl">
+        <label for="sel-sort">排序依據</label>
+        <select id="sel-sort">
+          <option value="rank">本期名次</option>
+          <option value="rank_delta">名次上升最多</option>
+          <option value="rank_delta_desc">名次下滑最多</option>
+          <option value="change">增減 % 最高</option>
+          <option value="change_desc">增減 % 最低</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label for="sel-scope">顯示範圍</label>
+        <select id="sel-scope">
+          <option value="all">全部</option>
+          <option value="watch">只看關注中 ⭐</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="notice" class="notice hidden"></div>
+    <div id="stats" class="stats-grid"></div>
+
+    <!-- 名次變動圖 -->
+    <div id="bump-section">
+      <h2 class="section-title">名次變動軌跡</h2>
+      <p class="note">縱軸為名次，越上面越前面。只畫本期前 15 名。</p>
+      <div class="chart-card"><div class="chart-wrap"><canvas id="bump"></canvas></div></div>
+    </div>
+
+    <!-- 估值散佈圖 -->
+    <div id="scatter-section" class="hidden">
+      <h2 class="section-title">本益比 × 股價淨值比</h2>
+      <p class="note">實心為本期，空心為對照期。兩者相連代表同一檔的移動方向。</p>
+      <div class="chart-card">
+        <div class="chart-wrap"><canvas id="scatter"></canvas></div>
+        <div class="quadrant-legend">
+          <span class="ql tl">高 PB · 低 PE</span>
+          <span class="ql tr">高 PB · 高 PE（偏貴）</span>
+          <span class="ql bl">低 PB · 低 PE（偏便宜）</span>
+          <span class="ql br">低 PB · 高 PE</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="table-title">明細</h2>
+    <p class="note" id="table-note"></p>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+
+/* ── 狀態 ──────────────────────────────────────────────────────── */
+let H = null;                 // history.json
+let view = 'universe';
+let bumpChart = null, scatterChart = null;
+
+/* 各分頁的設定：value 欄位、單位換算、標題 */
+const VIEWS = {
+  universe:  { label:'市值',   key:'market_cap', unit:'億元', div:1e8,
+               note:'' },
+  monthly:   { label:'當月營收', key:'rev',        unit:'億元', div:1e5,
+               note:'資料來源 t187ap05_L，原始單位為新台幣千元，此處換算為億元。標「還原值」的期別是由當期資料的「上月營收」與「去年當月營收」欄位反推，只有營收金額，沒有增減率。' },
+  quarterly: { label:'季營收',  key:'revenue',    unit:'億元', div:1e5,
+               note:'金控、金融、保險、證券期貨業的損益表結構與一般業不同，毛利率不適用者顯示為 —。' },
+  valuation: { label:'本益比',  key:'pe',         unit:'倍',   div:1,
+               note:'名次依市值，不依本益比。本益比與股價淨值比是「單一交易日」的數字，不是月平均或季資料。' }
+};
+
+/* ── 格式化 ────────────────────────────────────────────────────── */
+const fmt = (v, d = 1) =>
+  (v === null || v === undefined || Number.isNaN(v)) ? '—'
+  : v.toLocaleString('zh-TW', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+const fmtPct = v =>
+  (v === null || v === undefined || Number.isNaN(v)) ? '—'
+  : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+
+function deltaCell(d) {
+  if (d === null || d === undefined) return '<td class="num flat">—</td>';
+  if (d > 0) return `<td class="num up">▲ ${d}</td>`;
+  if (d < 0) return `<td class="num down">▼ ${Math.abs(d)}</td>`;
+  return '<td class="num flat">—</td>';
+}
+const pctCell = v => {
+  if (v === null || v === undefined) return '<td class="num flat">—</td>';
+  return `<td class="num ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${fmtPct(v)}</td>`;
+};
+const nameOf = c => (H.companies[c] && H.companies[c].name) || c;
+const industryOf = c => (H.companies[c] && H.companies[c].industry) || '—';
+const pctChange = (a, b) => (a === null || b === null || a === undefined || b === undefined || b === 0)
+  ? null : (a - b) / Math.abs(b) * 100;
+
+/* ── 載入 ──────────────────────────────────────────────────────── */
+async function boot() {
+  try {
+    const res = await fetch('./history.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    start(await res.json());
+  } catch (e) {
+    document.getElementById('fallback').classList.remove('hidden');
+    document.getElementById('build-meta').textContent = '尚未載入資料';
+  }
+}
+
+function start(obj) {
+  if (!obj || !obj.companies || !obj.universe) {
+    throw new Error('這份 JSON 不是 twse_compare.py 產生的 history.json');
+  }
+  H = obj;
+  document.getElementById('fallback').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const n = H.meta.snapshot_count || 0;
+  document.getElementById('build-meta').textContent =
+    `${(H.meta.built_at || '').slice(0, 10)} · ${n} 份快照`;
+  setView('universe');
+}
+
+document.getElementById('btn-paste').addEventListener('click', () => {
+  const msg = document.getElementById('paste-msg');
+  try {
+    start(JSON.parse(document.getElementById('paste').value.trim()));
+    msg.className = 'msg ok';
+    msg.textContent = '已載入。';
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = '讀不到資料：' + e.message;
+  }
+});
+
+/* ── 分頁切換 ──────────────────────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(btn =>
+  btn.addEventListener('click', () => setView(btn.dataset.view)));
+
+function setView(v) {
+  view = v;
+  document.querySelectorAll('.tab').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.view === v)));
+
+  const periods = H[v].periods || [];
+  const selCur = document.getElementById('sel-cur');
+  const selPrev = document.getElementById('sel-prev');
+  const partials = new Set(
+    periods.filter(p => ((H[v].data[p] || [])[0] || {}).partial));
+  const opts = periods.map(p =>
+    `<option value="${p}">${p}${partials.has(p) ? '（至今）' : ''}</option>`).join('');
+  selCur.innerHTML = opts;
+  selPrev.innerHTML = opts;
+  selCur.value = periods[periods.length - 1] || '';
+  selPrev.value = periods[periods.length - 2] || periods[periods.length - 1] || '';
+
+  const isVal = v === 'valuation';
+  document.getElementById('bump-section').classList.toggle('hidden', isVal);
+  document.getElementById('scatter-section').classList.toggle('hidden', !isVal);
+  document.getElementById('table-note').textContent = noteFor(v);
+
+  showNotice(v, periods);
+  render();
+}
+
+function noteFor(v) {
+  if (v !== 'universe') return VIEWS[v].note;
+  return H.universe.kind === 'month'
+    ? '市值 = 該月加權平均價 × 已發行股數。標「至今」的月份尚未結束，用的是最近一次抓取的當日收盤價。股數只有目前這一個版本，遇增減資時過去月份會有誤差。'
+    : '市值 = 當日收盤價 × 已發行股數。成分股每期依全市場市值重算，故有進榜與退榜。';
+}
+
+/* 只有一期時要說清楚原因，不要讓使用者看到一排 0 卻不知道為什麼 */
+function showNotice(v, periods) {
+  const el = document.getElementById('notice');
+  if (periods.length >= 2) { el.classList.add('hidden'); return; }
+  const why = {
+    universe:  '月成交資訊端點這次只回傳一個月份。下個月再跑一次就會有第二期。',
+    monthly:   '月營收自帶上月與去年同月，正常會有三期。若只有一期，代表這次沒抓到月營收資料。',
+    quarterly: '季報端點只給「已申報」的公司，大型股通常接近申報期限才公布。季報截止日過後再跑一次即可。',
+    valuation: '本益比是單日數字，沒有歷史可回補。下次執行就會有第二個時點。'
+  }[v];
+  if (periods.length) {
+    el.innerHTML = `<b>這個分頁只有 1 期，所以沒有比較數字。</b> ${why}`;
+  } else if (v === 'quarterly' && H.meta.quarterly_seen) {
+    const seen = H.meta.quarterly_seen, out = H.meta.quarterly_filtered || 0;
+    el.innerHTML = `<b>目前沒有前 100 大的季報。</b> 端點上有 ${seen} 家已申報，`
+      + `其中 ${out} 家不在市值前 100 大，已排除。大型股通常接近申報期限才公布——`
+      + `季報截止日過後再跑一次 <code>twse_fetcher.py</code> 就會有資料。`;
+  } else {
+    el.innerHTML = `<b>這個分頁沒有任何資料。</b> `
+      + `請用 <code>python twse_fetcher.py --debug</code> 重跑，看端點回傳了什麼。`;
+  }
+  el.classList.remove('hidden');
+}
+
+['sel-cur', 'sel-prev', 'sel-sort', 'sel-scope'].forEach(id =>
+  document.getElementById(id).addEventListener('change', render));
+
+/* ── 主渲染 ────────────────────────────────────────────────────── */
+function render() {
+  const cfg = VIEWS[view];
+  const cur = document.getElementById('sel-cur').value;
+  const prev = document.getElementById('sel-prev').value;
+  const store = H[view].data || {};
+  const curRows = store[cur] || [];
+  const prevMap = new Map((store[prev] || []).map(r => [r.code, r]));
+  const watchSet = watchCodes();
+
+  // 組出比較列
+  let rows = curRows.map(r => {
+    const p = prevMap.get(r.code);
+    const val = r[cfg.key], pval = p ? p[cfg.key] : null;
+    return {
+      ...r,
+      prev_rank: p ? p.rank : null,
+      delta: (p && p.rank && r.rank) ? p.rank - r.rank : null,
+      value: val, prev_value: pval,
+      change: pctChange(val, pval),
+      isNew: !p,
+      watch: r.watch !== undefined ? r.watch : watchSet.has(r.code)
+    };
+  });
+
+  if (document.getElementById('sel-scope').value === 'watch') {
+    rows = rows.filter(r => r.watch);
+  }
+  sortRows(rows);
+
+  renderStats(rows, cur, prev, store[prev] || [], cfg);
+  renderTable(rows, cur, prev, cfg);
+  if (view === 'valuation') renderScatter(curRows, store[prev] || []);
+  else renderBump(cur);
+}
+
+function watchCodes() {
+  const s = new Set();
+  const u = H.universe.data || {};
+  Object.values(u).forEach(rows => rows.forEach(r => { if (r.watch) s.add(r.code); }));
+  return s;
+}
+
+function sortRows(rows) {
+  const mode = document.getElementById('sel-sort').value;
+  const last = v => (v === null || v === undefined) ? Number.NEGATIVE_INFINITY : v;
+  const lastAsc = v => (v === null || v === undefined) ? Number.POSITIVE_INFINITY : v;
+  if (mode === 'rank') rows.sort((a, b) => lastAsc(a.rank) - lastAsc(b.rank));
+  else if (mode === 'rank_delta') rows.sort((a, b) => last(b.delta) - last(a.delta));
+  else if (mode === 'rank_delta_desc') rows.sort((a, b) => lastAsc(a.delta) - lastAsc(b.delta));
+  else if (mode === 'change') rows.sort((a, b) => last(b.change) - last(a.change));
+  else rows.sort((a, b) => lastAsc(a.change) - lastAsc(b.change));
+}
+
+/* ── 統計卡 ────────────────────────────────────────────────────── */
+function renderStats(rows, cur, prev, prevRows, cfg) {
+  const el = document.getElementById('stats');
+  if (!rows.length) { el.innerHTML = ''; return; }
+
+  const ups = rows.filter(r => r.delta !== null && r.delta > 0).length;
+  const downs = rows.filter(r => r.delta !== null && r.delta < 0).length;
+  const news = rows.filter(r => r.isNew).length;
+  const dropped = ((H[view].dropped || {})[cur] || []).length;
+  // 對照期合計只加總「本期也在表上」的同一批公司，兩邊基準才一致
+  const shown = new Set(rows.map(r => r.code));
+  const total = rows.reduce((s, r) => s + (r.value || 0), 0) / cfg.div;
+  const prevTotal = prevRows.reduce(
+    (s, r) => s + (shown.has(r.code) ? (r[cfg.key] || 0) : 0), 0) / cfg.div;
+  const totalChange = pctChange(total, prevTotal);
+
+  const big = rows.filter(r => r.delta !== null)
+                  .sort((a, b) => b.delta - a.delta)[0];
+
+  const cards = [];
+  if (view === 'valuation') {
+    // 本益比加總沒有意義，改看中位數
+    const med = arr => {
+      const a = arr.filter(v => typeof v === 'number' && v > 0).sort((x, y) => x - y);
+      return a.length ? a[Math.floor(a.length / 2)] : null;
+    };
+    const curMed = med(rows.map(r => r.pe));
+    const prevMed = med(prevRows.map(r => r.pe));
+    const medChange = pctChange(curMed, prevMed);
+    cards.push(
+      { label: '本益比中位數', value: fmt(curMed, 1), sub: `倍 · ${cur}`, cls: '' },
+      { label: '對照期變化', value: fmtPct(medChange), sub: `對照 ${prev}`,
+        cls: medChange > 0 ? 'red' : medChange < 0 ? 'green' : '' },
+      { label: '股價淨值比中位數', value: fmt(med(rows.map(r => r.pb)), 2), sub: '倍', cls: 'blue' },
+      { label: '殖利率中位數', value: fmt(med(rows.map(r => r.dy)), 2), sub: '%', cls: 'green' }
+    );
+  } else {
+    cards.push(
+      { label: `本期 ${cfg.label}合計`, value: fmt(total, 0), sub: `${cfg.unit} · ${cur}`, cls: '' },
+      { label: '對照期變化', value: fmtPct(totalChange), sub: `對照 ${prev}`,
+        cls: totalChange > 0 ? 'green' : totalChange < 0 ? 'red' : '' },
+      { label: '名次上升', value: ups, sub: `下滑 ${downs} 家`, cls: 'green' },
+      { label: '新進榜', value: news, sub: `退榜 ${dropped} 家`, cls: 'blue' }
+    );
+  }
+  if (big && big.delta > 0) {
+    cards.push({ label: '升幅最大', value: `▲${big.delta}`,
+                 sub: `${nameOf(big.code)}（${big.code}）`, cls: 'green' });
+  }
+
+  el.innerHTML = cards.map(c => `
+    <div class="stat-card ${c.cls}">
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.value}</div>
+      <div class="stat-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+/* ── 明細表 ────────────────────────────────────────────────────── */
+function renderTable(rows, cur, prev, cfg) {
+  document.getElementById('table-title').textContent =
+    `${cur} 對照 ${prev}`;
+
+  const isQ = view === 'quarterly';
+  const isV = view === 'valuation';
+
+  let head = `<tr>
+    <th>名次</th><th>變動</th><th>代號</th><th>公司</th>`;
+  if (isV) {
+    head += `<th>本益比</th><th>股價淨值比</th><th>殖利率%</th><th>本益比增減</th>`;
+  } else {
+    head += `<th>本期 ${cfg.label}(${cfg.unit})</th><th>對照期</th><th>增減%</th>`;
+    if (view === 'monthly') head += `<th>月增減%</th><th>年增減%</th><th>產業</th>`;
+    if (isQ) head += `<th>毛利率%</th><th>營益率%</th><th>EPS</th><th>業別</th>`;
+    if (view === 'universe') head += `<th>收盤價</th>`;
+  }
+  head += `<th>狀態</th></tr>`;
+  document.getElementById('thead').innerHTML = head;
+
+  const tbody = document.getElementById('tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="14"><div class="empty">這一期沒有資料。換一個期別，或先跑一次 twse_fetcher.py 累積快照。</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    let tds = `<td class="num mono">${r.rank ?? '—'}</td>`;
+    tds += deltaCell(r.delta);
+    tds += `<td class="mono">${r.code}</td>`;
+    tds += `<td>${nameOf(r.code)}${r.watch ? '<span class="star">★</span>' : ''}</td>`;
+
+    if (isV) {
+      tds += `<td class="num">${fmt(r.pe, 2)}</td>`;
+      tds += `<td class="num">${fmt(r.pb, 2)}</td>`;
+      tds += `<td class="num">${fmt(r.dy, 2)}</td>`;
+      tds += pctCell(r.change);
+    } else {
+      tds += `<td class="num">${fmt(r.value / cfg.div, 1)}</td>`;
+      tds += `<td class="num flat">${r.prev_value === null || r.prev_value === undefined ? '—' : fmt(r.prev_value / cfg.div, 1)}</td>`;
+      tds += pctCell(r.change);
+      if (view === 'monthly') {
+        tds += pctCell(r.mom_pct);
+        tds += pctCell(r.yoy_pct);
+        tds += `<td>${industryOf(r.code)}</td>`;
+      }
+      if (isQ) {
+        tds += `<td class="num">${fmt(r.gross_margin, 1)}</td>`;
+        tds += `<td class="num">${fmt(r.op_margin, 1)}</td>`;
+        tds += `<td class="num">${fmt(r.eps, 2)}</td>`;
+        tds += `<td>${r.sector || '—'}</td>`;
+      }
+      if (view === 'universe') tds += `<td class="num">${fmt(r.close, 1)}</td>`;
+    }
+
+    const badge = r.partial ? '<span class="badge partial">當月至今</span>'
+                : r.derived ? '<span class="badge derived">還原值</span>'
+                : r.isNew ? '<span class="badge new">新進榜</span>'
+                : r.status === 'base' ? '<span class="badge base">基準期</span>' : '';
+    tds += `<td>${badge}</td>`;
+    return `<tr>${tds}</tr>`;
+  }).join('');
+}
+
+/* ── 名次變動圖 ────────────────────────────────────────────────── */
+function renderBump(cur) {
+  const periods = H[view].periods || [];
+  const store = H[view].data || {};
+  const curRows = (store[cur] || []).filter(r => r.rank).slice(0, 15);
+  const idx = periods.indexOf(cur);
+  const shown = periods.slice(Math.max(0, idx - 4), idx + 1);   // 最多回看 5 期
+
+  const palette = ['#f5c842','#60a5fa','#22c55e','#f97316','#ef4444',
+                   '#c9a235','#a78bfa','#2dd4bf','#fb7185','#94a3b8',
+                   '#facc15','#38bdf8','#4ade80','#fdba74','#f87171'];
+
+  const datasets = curRows.map((r, i) => ({
+    label: `${nameOf(r.code)} ${r.code}`,
+    data: shown.map(p => {
+      const row = (store[p] || []).find(x => x.code === r.code);
+      return row && row.rank ? row.rank : null;
+    }),
+    borderColor: palette[i % palette.length],
+    backgroundColor: palette[i % palette.length],
+    borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+    tension: 0.25, spanGaps: false
+  }));
+
+  if (bumpChart) bumpChart.destroy();
+  bumpChart = new Chart(document.getElementById('bump'), {
+    type: 'line',
+    data: { labels: shown, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false },
+      scales: {
+        y: { reverse: true, min: 1, ticks: { color: '#a09480', precision: 0 },
+             grid: { color: 'rgba(26,42,69,.7)' },
+             title: { display: true, text: '名次', color: '#c9a235' } },
+        x: { ticks: { color: '#a09480' }, grid: { color: 'rgba(26,42,69,.5)' } }
+      },
+      plugins: {
+        legend: { labels: { color: '#c8bfb0', boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}：第 ${c.parsed.y} 名` } }
+      }
+    }
+  });
+}
+
+/* ── 估值散佈圖 ────────────────────────────────────────────────── */
+function renderScatter(curRows, prevRows) {
+  const ok = r => r.pe > 0 && r.pb > 0;
+  const cur = curRows.filter(ok);
+  const prevMap = new Map(prevRows.filter(ok).map(r => [r.code, r]));
+
+  const links = [];
+  cur.forEach(r => {
+    const p = prevMap.get(r.code);
+    if (p) links.push({ code: r.code, from: p, to: r });
+  });
+
+  if (scatterChart) scatterChart.destroy();
+  scatterChart = new Chart(document.getElementById('scatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        ...links.map(l => ({
+          type: 'line',
+          data: [{ x: l.from.pe, y: l.from.pb }, { x: l.to.pe, y: l.to.pb }],
+          borderColor: 'rgba(200,191,176,.28)', borderWidth: 1,
+          pointRadius: 0, showLine: true, fill: false, order: 3
+        })),
+        { label: '對照期', data: [...prevMap.values()].map(r => ({ x: r.pe, y: r.pb, code: r.code })),
+          backgroundColor: 'transparent', borderColor: '#a09480', borderWidth: 1.5,
+          pointRadius: 5, order: 2 },
+        { label: '本期', data: cur.map(r => ({ x: r.pe, y: r.pb, code: r.code })),
+          backgroundColor: '#f5c842', borderColor: '#f5c842', pointRadius: 5, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: '本益比（倍）', color: '#c9a235' },
+             ticks: { color: '#a09480' }, grid: { color: 'rgba(26,42,69,.7)' } },
+        y: { title: { display: true, text: '股價淨值比（倍）', color: '#c9a235' },
+             ticks: { color: '#a09480' }, grid: { color: 'rgba(26,42,69,.7)' } }
+      },
+      plugins: {
+        legend: { labels: { color: '#c8bfb0', filter: i => i.text === '本期' || i.text === '對照期' } },
+        tooltip: {
+          filter: c => Boolean(c.raw && c.raw.code),
+          callbacks: {
+            label: c => `${nameOf(c.raw.code)}（${c.raw.code}） PE ${c.parsed.x.toFixed(1)} / PB ${c.parsed.y.toFixed(2)}`
+          }
+        }
+      }
+    }
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
